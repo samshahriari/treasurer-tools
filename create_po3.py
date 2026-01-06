@@ -25,8 +25,9 @@ def format_kostnad(kostnad, length=13):
 
 
 def row_validation(row) -> bool:
-    # TODO implement
-    return True
+    # TODO more checks
+
+    return row["Godkänt"]
 
 
 def main():
@@ -39,7 +40,7 @@ def main():
 
     output_lines = []
     output_lines.append(generate_header_row())
-    content = pd.read_csv("./data/example_expense.csv")
+    content = pd.read_csv(os.getenv("EXPENSE_PATH"))
     for _, row in content.iterrows():
         if not row_validation(row):
             print(f"Row validation failed for row: {row}")

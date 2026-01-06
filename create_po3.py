@@ -99,7 +99,7 @@ def main():
     output_lines = []
     output_lines.append(generate_start_line())
     content = pd.read_csv(os.getenv("EXPENSE_PATH"))
-    for _, row in content.iterrows():
+    for _, row in content[~content["Utbetalt"]].iterrows():
         payment = generate_lines_for_one_expense(row)
         if payment:
             output_lines.extend(payment)

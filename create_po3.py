@@ -107,7 +107,11 @@ def main():
             number_of_rows += 1
     output_lines.append(generate_end_line(number_of_rows, total_cost))
     file_name = "utlägg_" + datetime.datetime.now().strftime("%Y%m%d") + "_po3.txt"
+    if number_of_rows == 0:
+        print("No new expenses to process.")
+        return
     write_file(file_name, output_lines)
+    print(f"{number_of_rows} expenses written to: {file_name}")
 
 
 if __name__ == "__main__":

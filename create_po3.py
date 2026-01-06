@@ -1,11 +1,11 @@
 import datetime
 import os
-from typing import Iterable
-from dotenv import load_dotenv
+
 import pandas as pd
+from dotenv import load_dotenv
 
 
-def write_file(file_name, lines):
+def write_file(file_name: str, lines: list[str]) -> None:
     with open(file_name, "w", encoding="utf-8") as f:
         f.write("\n".join(lines))
 
@@ -29,21 +29,23 @@ def generate_end_line(number_of_rows: int, total_cost: float) -> str:
         "MT00"
         + " " * (29 - 5 + 1)
         + str(number_of_rows).zfill(7)
-        + format_kostnad(total_cost, 15)
+        + format_amount(total_cost, 15)
         + " " * (80 - 52 + 1)
     )
 
 
-def format_kostnad(kostnad, length=13):
-    return str(int(kostnad * 100)).zfill(length)
+def format_amount(amount: float, length=13):
+    return str(int(amount * 100)).zfill(length)
 
 
-def row_validation(row) -> bool:
+def row_validation(row: pd.DataFrame) -> bool:
     # TODO more checks
     return row["Godkänt"]
 
 
-def generate_PI00(clearing_number, account_number, amount, message) -> str:
+def generate_pi00(
+    clearing_number: int, account_number: int, amount: float, message: str
+) -> str:
     return (
         "PI00"
         + "09"
@@ -51,13 +53,13 @@ def generate_PI00(clearing_number, account_number, amount, message) -> str:
         + str(account_number).ljust(11)
         + "  "
         + datetime.datetime.now().strftime("%Y%m%d")
-        + format_kostnad(amount)
+        + format_amount(amount)
         + message.ljust(20)
         + " " * (80 - 66 + 1)
     )
 
 
-def generate_BA00(note) -> str:
+def generate_ba00(note: str) -> str:
     return (
         "BA00"
         + " " * (22 - 5 + 1)
@@ -67,24 +69,24 @@ def generate_BA00(note) -> str:
     )
 
 
-def generate_BE01(recipient) -> str:
+def generate_be01(recipient: str) -> str:
     return "BE01" + " " * (22 - 5 + 1) + recipient.ljust(80 - 23 + 1)
 
 
-def generate_lines_for_one_expense(row) -> Iterable[str] | None:
+def generate_lines_for_one_expense(row: pd.DataFrame) -> list[str] | None:
     if not row_validation(row):
         print(f"Row validation failed for row: {row}")
         return None
     out = []
     message = f"{row['Verksamhet']} {row['Kort beskrivning av köp']}"
     out.append(
-        generate_PI00(
+        generate_pi00(
             row["Clearingnummer"], row["Kontonummer"], row["Kostnad"], message
         )
     )
     note = f"{row['Verksamhet']} {row['Kort beskrivning av köp']} {row['Ditt namn']}"
-    out.append(generate_BA00(note))
-    out.append(generate_BE01(row["Ditt namn"]))
+    out.append(generate_ba00(note))
+    out.append(generate_be01(row["Ditt namn"]))
     return out
 
 

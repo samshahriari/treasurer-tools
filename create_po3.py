@@ -43,7 +43,7 @@ def row_validation(row: pd.DataFrame) -> bool:
     return row["Godkänt"]
 
 
-def generate_pi00(
+def generate_pi00_expense(
     clearing_number: int, account_number: int, amount: float, message: str
 ) -> str:
     return (
@@ -56,6 +56,21 @@ def generate_pi00(
         + format_amount(amount)
         + message.ljust(20)
         + " " * (80 - 66 + 1)
+    )
+
+
+def generate_pi00_giro(account_number: int, amount: float, ocr: str, giro_code: str) -> str:
+    # giro_code is  "00" for plusgiro and "05" for bankgiro
+    return (
+        "PI00"
+        + giro_code
+        + " " * (11 - 7 + 1)
+        + str(account_number).ljust(11)
+        + "  "
+        + datetime.datetime.now().strftime("%Y%m%d")
+        + format_amount(amount)
+        + str(ocr).ljust(70 - 46 + 1)
+        + " " * (80 - 71 + 1)
     )
 
 
@@ -80,13 +95,30 @@ def generate_lines_for_one_expense(row: pd.DataFrame) -> list[str] | None:
     out = []
     message = f"{row['Verksamhet']} {row['Kort beskrivning av köp']}"
     out.append(
-        generate_pi00(
+        generate_pi00_expense(
             row["Clearingnummer"], row["Kontonummer"], row["Kostnad"], message
         )
     )
     note = f"{row['Verksamhet']} {row['Kort beskrivning av köp']} {row['Ditt namn']}"
     out.append(generate_ba00(note))
     out.append(generate_be01(row["Ditt namn"]))
+    return out
+
+
+def generate_lines_for_one_invoice(row: pd.DataFrame) -> list[str] | None:
+    if not row_validation(row):
+        print(f"Row validation failed for row: {row}")
+        return None
+    out = []
+    giro_code = "00" if row["Mottagarkontotyp"] == "Plusgiro" else "05"
+    out.append(
+        generate_pi00_giro(
+            row["Mottagarkontonummer"], row["Belopp"], row["OCR/meddelande"], giro_code
+        )
+    )
+    note = f"{row['Verksamhet']} {row['Kort beskrivning av köp']} {row['Ditt namn']}"
+    out.append(generate_ba00(note))
+    out.append(generate_be01(row["Mottagare (namn)"]))
     return out
 
 
@@ -98,12 +130,19 @@ def main():
 
     output_lines = []
     output_lines.append(generate_start_line())
-    content = pd.read_csv(os.getenv("EXPENSE_PATH"))
-    for _, row in content[~content["Utbetalt"]].iterrows():
+    expenses = pd.read_csv(os.getenv("EXPENSE_PATH"))
+    for _, row in expenses[~expenses["Utbetalt"]].iterrows():
         payment = generate_lines_for_one_expense(row)
         if payment:
             output_lines.extend(payment)
             total_cost += row["Kostnad"]
+            number_of_rows += 1
+    invoices = pd.read_csv(os.getenv("INVOICE_PATH"))
+    for _, row in invoices[~invoices["Utbetalt"]].iterrows():
+        payment = generate_lines_for_one_invoice(row)
+        if payment:
+            output_lines.extend(payment)
+            total_cost += row["Belopp"]
             number_of_rows += 1
     output_lines.append(generate_end_line(number_of_rows, total_cost))
     file_name = "utlägg_" + datetime.datetime.now().strftime("%Y%m%d") + "_po3.txt"

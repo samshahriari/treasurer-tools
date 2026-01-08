@@ -54,8 +54,8 @@ def generate_pi00_expense(
         + "  "
         + datetime.datetime.now().strftime("%Y%m%d")
         + format_amount(amount)
-        + message.ljust(20)
-        + " " * (80 - 66 + 1)
+        + message.ljust(12)[:12]
+        + " " * (8 + 80 - 66 + 1)
     )
 
 
@@ -77,9 +77,9 @@ def generate_pi00_giro(account_number: int, amount: float, ocr: str, giro_code: 
 def generate_ba00(note: str) -> str:
     return (
         "BA00"
-        + " " * (22 - 5 + 1)
+        + note.ljust(22 - 5 + 1)[:22 - 5 + 1]
         + " " * (31 - 23 + 1)
-        + note.ljust(66 - 32 + 1)
+        + note.ljust(66 - 32 + 1)[:66 - 32 + 1]
         + " " * (80 - 67 + 1)
     )
 

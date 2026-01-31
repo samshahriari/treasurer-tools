@@ -35,7 +35,7 @@ def generate_end_line(number_of_rows: int, total_cost: float) -> str:
 
 
 def format_amount(amount: float, length=13):
-    return str(int(amount * 100)).zfill(length)
+    return str(round(amount * 100)).zfill(length)
 
 
 def row_validation(row: pd.DataFrame) -> bool:

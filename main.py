@@ -7,6 +7,7 @@ import pandas as pd
 from config import Config
 from constants import COL_PAID, COL_UPLOAD_INVOICE, COL_UPLOAD_RECEIPT
 from data_loader import load_data_from_csv, load_data_from_gsheets
+from file_downloader import download_processed_files
 from formatters import generate_end_line, generate_start_line
 from payment_generator import generate_lines_for_expense, generate_lines_for_invoice
 from validators import validate_expense, validate_invoice
@@ -133,7 +134,6 @@ def main():
         
         # Download attached files if using Google Sheets
         if config.use_gsheets and (expenses_with_files or invoices_with_files):
-            from file_downloader import download_processed_files
             download_processed_files(expenses_with_files, invoices_with_files)
 
     except Exception as e:

@@ -152,10 +152,10 @@ def download_processed_files(
         expense_dir = os.path.join(output_dir, "receipts")
         print(f"\nDownloading {len(expenses_with_files)} expense receipt(s)...")
         
-        for idx, name, file_url in expenses_with_files:
-            # Create safe filename from name and index
+        for counter, (idx, name, file_url) in enumerate(expenses_with_files, start=1):
+            # Create safe filename from name and counter
             safe_name = sanitize_filename(name)
-            filename = f"expense_{idx}_{safe_name}"
+            filename = f"expense_{counter:03d}_{safe_name}"
             
             downloaded_path = download_file_from_drive(file_url, expense_dir, filename)
             if downloaded_path:
@@ -166,10 +166,10 @@ def download_processed_files(
         invoice_dir = os.path.join(output_dir, "invoices")
         print(f"\nDownloading {len(invoices_with_files)} invoice(s)...")
         
-        for idx, name, file_url in invoices_with_files:
-            # Create safe filename from name and index
+        for counter, (idx, name, file_url) in enumerate(invoices_with_files, start=1):
+            # Create safe filename from name and counter
             safe_name = sanitize_filename(name)
-            filename = f"invoice_{idx}_{safe_name}"
+            filename = f"invoice_{counter:03d}_{safe_name}"
             
             downloaded_path = download_file_from_drive(file_url, invoice_dir, filename)
             if downloaded_path:

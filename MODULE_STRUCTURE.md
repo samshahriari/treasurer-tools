@@ -113,7 +113,7 @@ Downloaded files are saved to:
 - `downloaded_documents/receipts/` - Expense receipts
 - `downloaded_documents/invoices/` - Invoice files
 
-Files are named with format: `expense_{index}_{name}` or `invoice_{index}_{name}`
+Files are named with format: `expense_NNN_{name}` or `invoice_NNN_{name}` where NNN is a sequential counter.
 
 **Note:** This feature requires Google Drive API access and proper OAuth credentials.
 

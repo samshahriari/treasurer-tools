@@ -1,6 +1,6 @@
 """Pydantic models for expense and invoice data."""
 
-from typing import Literal
+from typing import Literal, Optional
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
@@ -27,6 +27,7 @@ class ExpenseRow(BaseModel):
     Kontonummer: int
     Ditt_namn: str = Field(alias="Ditt namn")
     Kort_beskrivning_av_köp: str = Field(alias="Kort beskrivning av köp")
+    Ladda_upp_bild_på_kvitto: Optional[str] = Field(default=None, alias="Ladda upp bild på kvitto")
 
     @field_validator("Godkänt", "Utbetalt", mode="before")
     @classmethod
@@ -72,6 +73,7 @@ class InvoiceRow(BaseModel):
     Ditt_namn: str = Field(alias="Ditt namn")
     Kort_beskrivning_av_köp: str = Field(alias="Kort beskrivning av köp")
     Mottagare_namn: str = Field(alias="Mottagare (namn)")
+    Ladda_upp_fakturan: Optional[str] = Field(default=None, alias="Ladda upp fakturan")
 
     @field_validator("Godkänt", "Utbetalt", mode="before")
     @classmethod

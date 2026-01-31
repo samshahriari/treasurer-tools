@@ -5,7 +5,7 @@ import datetime
 import pandas as pd
 
 from config import Config
-from constants import COL_PAID
+from constants import COL_PAID, COL_UPLOAD_INVOICE, COL_UPLOAD_RECEIPT
 from data_loader import load_data_from_csv, load_data_from_gsheets
 from formatters import generate_end_line, generate_start_line
 from payment_generator import generate_lines_for_expense, generate_lines_for_invoice
@@ -30,7 +30,7 @@ def process_payments(
     config: Config,
     ws_expenses=None,
     ws_invoices=None
-) -> tuple[list[str], int, float]:
+) -> tuple[list[str], int, float, list[tuple[int, str, str]], list[tuple[int, str, str]]]:
     """
     Process all unpaid expenses and invoices.
 
@@ -42,11 +42,13 @@ def process_payments(
         ws_invoices: Optional Google Sheets worksheet for invoices
 
     Returns:
-        Tuple of (output_lines, number_of_rows, total_cost)
+        Tuple of (output_lines, number_of_rows, total_cost, expenses_with_files, invoices_with_files)
     """
     output_lines = []
     number_of_rows = 0
     total_cost = 0.0
+    expenses_with_files = []
+    invoices_with_files = []
 
     # Process expenses
     for i, row in expenses[~expenses[COL_PAID]].iterrows():
@@ -55,6 +57,10 @@ def process_payments(
             output_lines.extend(generate_lines_for_expense(expense))
             total_cost += expense.Belopp
             number_of_rows += 1
+            
+            # Collect file URLs if present
+            if hasattr(expense, 'Ladda_upp_bild_på_kvitto') and expense.Ladda_upp_bild_på_kvitto:
+                expenses_with_files.append((i, expense.Ditt_namn, expense.Ladda_upp_bild_på_kvitto))
 
             if config.use_gsheets and ws_expenses:
                 ws_expenses.update_cell(
@@ -70,6 +76,10 @@ def process_payments(
             output_lines.extend(generate_lines_for_invoice(invoice))
             total_cost += invoice.Belopp
             number_of_rows += 1
+            
+            # Collect file URLs if present
+            if hasattr(invoice, 'Ladda_upp_fakturan') and invoice.Ladda_upp_fakturan:
+                invoices_with_files.append((i, invoice.Ditt_namn, invoice.Ladda_upp_fakturan))
 
             if config.use_gsheets and ws_invoices:
                 ws_invoices.update_cell(
@@ -78,7 +88,7 @@ def process_payments(
                     True
                 )
 
-    return output_lines, number_of_rows, total_cost
+    return output_lines, number_of_rows, total_cost, expenses_with_files, invoices_with_files
 
 
 def main():
@@ -101,7 +111,7 @@ def main():
         invoices[COL_PAID] = parse_bool_col(invoices[COL_PAID])
 
         # Process payments
-        output_lines, number_of_rows, total_cost = process_payments(
+        output_lines, number_of_rows, total_cost, expenses_with_files, invoices_with_files = process_payments(
             expenses, invoices, config, ws_expenses, ws_invoices
         )
 
@@ -120,6 +130,11 @@ def main():
 
         print(f"✓ {number_of_rows} payments written to: {file_name}")
         print(f"✓ Total amount: {total_cost:.2f} SEK")
+        
+        # Download attached files if using Google Sheets
+        if config.use_gsheets and (expenses_with_files or invoices_with_files):
+            from file_downloader import download_processed_files
+            download_processed_files(expenses_with_files, invoices_with_files)
 
     except Exception as e:
         print(f"Error: {e}")

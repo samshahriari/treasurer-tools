@@ -96,7 +96,7 @@ def generate_lines_for_one_expense(row: pd.DataFrame) -> list[str] | None:
     message = f"{row['Verksamhet']} {row['Kort beskrivning av köp']}"
     out.append(
         generate_pi00_expense(
-            row["Clearingnummer"], row["Kontonummer"], row["Kostnad"], message
+            row["Clearingnummer"], row["Kontonummer"], row["Belopp"], message
         )
     )
     note = f"{row['Verksamhet']} {row['Kort beskrivning av köp']} {row['Ditt namn']}"
@@ -135,7 +135,7 @@ def main():
         payment = generate_lines_for_one_expense(row)
         if payment:
             output_lines.extend(payment)
-            total_cost += row["Kostnad"]
+            total_cost += row["Belopp"]
             number_of_rows += 1
     invoices = pd.read_csv(os.getenv("INVOICE_PATH"))
     for _, row in invoices[~invoices["Utbetalt"]].iterrows():

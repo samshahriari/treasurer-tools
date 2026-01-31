@@ -59,7 +59,7 @@ def process_payments(
             number_of_rows += 1
             
             # Collect file URLs if present
-            if hasattr(expense, 'Ladda_upp_bild_på_kvitto') and expense.Ladda_upp_bild_på_kvitto:
+            if expense.Ladda_upp_bild_på_kvitto:
                 expenses_with_files.append((i, expense.Ditt_namn, expense.Ladda_upp_bild_på_kvitto))
 
             if config.use_gsheets and ws_expenses:
@@ -78,7 +78,7 @@ def process_payments(
             number_of_rows += 1
             
             # Collect file URLs if present
-            if hasattr(invoice, 'Ladda_upp_fakturan') and invoice.Ladda_upp_fakturan:
+            if invoice.Ladda_upp_fakturan:
                 invoices_with_files.append((i, invoice.Ditt_namn, invoice.Ladda_upp_fakturan))
 
             if config.use_gsheets and ws_invoices:

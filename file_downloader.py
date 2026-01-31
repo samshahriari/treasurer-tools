@@ -1,11 +1,14 @@
 """Download files from Google Drive URLs."""
 
+import io
 import os
 import re
 from pathlib import Path
 from typing import Optional
 
 import gspread
+from googleapiclient.discovery import build
+from googleapiclient.http import MediaIoBaseDownload
 
 
 def extract_file_id_from_url(url: str) -> Optional[str]:
@@ -43,6 +46,19 @@ def extract_file_id_from_url(url: str) -> Optional[str]:
     return None
 
 
+def sanitize_filename(name: str) -> str:
+    """
+    Create a safe filename from a string.
+    
+    Args:
+        name: Input string to sanitize
+        
+    Returns:
+        Safe filename with only alphanumeric characters, spaces, hyphens, and underscores
+    """
+    return re.sub(r'[^\w\s-]', '', name).strip().replace(' ', '_')
+
+
 def download_file_from_drive(file_url: str, output_dir: str, filename: str) -> Optional[str]:
     """
     Download a file from Google Drive.
@@ -65,13 +81,14 @@ def download_file_from_drive(file_url: str, output_dir: str, filename: str) -> O
         Path(output_dir).mkdir(parents=True, exist_ok=True)
         
         # Use gspread to authenticate
-        gc = gspread.oauth()
+        try:
+            gc = gspread.oauth()
+        except Exception as auth_error:
+            print(f"  ⚠️  Google authentication failed: {auth_error}")
+            print("     Please ensure you have proper credentials setup (token.json or credentials.json)")
+            return None
         
         # Download file using Google Drive API
-        from googleapiclient.discovery import build
-        from googleapiclient.http import MediaIoBaseDownload
-        import io
-        
         # Build Drive API service using the same credentials
         drive_service = build('drive', 'v3', credentials=gc.auth)
         
@@ -137,7 +154,7 @@ def download_processed_files(
         
         for idx, name, file_url in expenses_with_files:
             # Create safe filename from name and index
-            safe_name = re.sub(r'[^\w\s-]', '', name).strip().replace(' ', '_')
+            safe_name = sanitize_filename(name)
             filename = f"expense_{idx}_{safe_name}"
             
             downloaded_path = download_file_from_drive(file_url, expense_dir, filename)
@@ -151,7 +168,7 @@ def download_processed_files(
         
         for idx, name, file_url in invoices_with_files:
             # Create safe filename from name and index
-            safe_name = re.sub(r'[^\w\s-]', '', name).strip().replace(' ', '_')
+            safe_name = sanitize_filename(name)
             filename = f"invoice_{idx}_{safe_name}"
             
             downloaded_path = download_file_from_drive(file_url, invoice_dir, filename)

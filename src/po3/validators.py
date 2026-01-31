@@ -4,7 +4,7 @@ from typing import Optional
 
 import pandas as pd
 
-from models import ExpenseRow, InvoiceRow
+from .models import ExpenseRow, InvoiceRow
 
 
 def validate_expense(row: pd.Series) -> Optional[ExpenseRow]:

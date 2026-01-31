@@ -2,7 +2,7 @@
 
 import datetime
 
-from constants import (
+from .constants import (
     CURRENCY,
     EXPENSE_CODE,
     RECORD_TYPE_BENEFICIARY,

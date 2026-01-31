@@ -2,7 +2,7 @@
 
 import pandas as pd
 
-from config import Config
+from .config import Config
 
 
 def load_data_from_gsheets(config: Config) -> tuple[pd.DataFrame, pd.DataFrame, object, object]:

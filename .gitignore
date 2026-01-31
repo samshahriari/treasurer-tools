@@ -1,6 +1,22 @@
+# Data files
 *.csv
+data/*.csv
+!data/example_expense.csv
+
+# Output files
+output/*.txt
+utlägg_*.txt
 *.txt
+!requirements.txt
+!README.txt
+
+# Config files
 *.xml
+.env
+google_client_secret.json
+.google_drive_token.json
+.spiris_tokens.json
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]
@@ -211,3 +227,4 @@ __marimo__/
 credentials.json
 token.json
 !requirements.txt
+*.json

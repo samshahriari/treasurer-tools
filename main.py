@@ -1,15 +1,27 @@
 """Main entry point for PO3 file generation."""
 
 import datetime
+import os
+import sys
+
+# Set UTF-8 encoding for console output on Windows
+if sys.platform == "win32":
+    sys.stdout.reconfigure(encoding='utf-8')
 
 import pandas as pd
 
-from config import Config
-from constants import COL_PAID
-from data_loader import load_data_from_csv, load_data_from_gsheets
-from formatters import generate_end_line, generate_start_line
-from payment_generator import generate_lines_for_expense, generate_lines_for_invoice
-from validators import validate_expense, validate_invoice
+from src.po3 import (
+    COL_PAID,
+    Config,
+    generate_end_line,
+    generate_lines_for_expense,
+    generate_lines_for_invoice,
+    generate_start_line,
+    load_data_from_csv,
+    load_data_from_gsheets,
+    validate_expense,
+    validate_invoice,
+)
 
 
 def write_po3_file(file_name: str, lines: list[str]) -> None:
@@ -20,8 +32,65 @@ def write_po3_file(file_name: str, lines: list[str]) -> None:
         file_name: Output file name
         lines: List of formatted lines
     """
-    with open(file_name, "w", encoding="utf-8") as f:
+    # Ensure output directory exists
+    os.makedirs("output", exist_ok=True)
+    file_path = os.path.join("output", file_name)
+
+    with open(file_path, "w", encoding="utf-8") as f:
         f.write("\n".join(lines))
+
+    return file_path
+
+
+def upload_attachments_to_spiris(expenses: pd.DataFrame, invoices: pd.DataFrame) -> None:
+    """
+    Upload attachments to Spiris if enabled.
+
+    Args:
+        expenses: DataFrame with expenses
+        invoices: DataFrame with invoices
+    """
+    if not os.getenv("UPLOAD_TO_SPIRIS", "FALSE").upper() == "TRUE":
+        return
+
+    try:
+        from src.integrations import (
+            SpirisClient,
+            get_google_drive_client,
+            upload_expense_attachments,
+            upload_invoice_attachments,
+        )
+
+        print("\nUploading attachments to Spiris...")
+        spiris_client = SpirisClient()
+        drive_client = get_google_drive_client()
+
+        # Upload expense attachments
+        for _, row in expenses[~expenses[COL_PAID]].iterrows():
+            expense = validate_expense(row)
+            if expense and hasattr(expense, "Ladda upp bild på kvitto"):
+                upload_expense_attachments(
+                    expense,
+                    spiris_client=spiris_client,
+                    drive_client=drive_client
+                )
+
+        # Upload invoice attachments
+        for _, row in invoices[~invoices[COL_PAID]].iterrows():
+            invoice = validate_invoice(row)
+            if invoice and hasattr(invoice, "Ladda upp fakturan"):
+                upload_invoice_attachments(
+                    invoice,
+                    spiris_client=spiris_client,
+                    drive_client=drive_client
+                )
+
+        print("✓ Attachment upload complete")
+
+    except ImportError:
+        print("Warning: Spiris modules not available. Skipping attachment uploads.")
+    except Exception as e:
+        print(f"Warning: Failed to upload attachments to Spiris - {e}")
 
 
 def process_payments(
@@ -49,7 +118,7 @@ def process_payments(
     total_cost = 0.0
 
     # Process expenses
-    for i, row in expenses[~expenses[COL_PAID]].iterrows():
+    for index, row in expenses[~expenses[COL_PAID]].iterrows():
         expense = validate_expense(row)
         if expense:
             output_lines.extend(generate_lines_for_expense(expense))
@@ -58,13 +127,13 @@ def process_payments(
 
             if config.use_gsheets and ws_expenses:
                 ws_expenses.update_cell(
-                    i + 2,
+                    index + 2,
                     expenses.columns.get_loc(COL_PAID) + 1,
                     True
                 )
 
     # Process invoices
-    for i, row in invoices[~invoices[COL_PAID]].iterrows():
+    for index, row in invoices[~invoices[COL_PAID]].iterrows():
         invoice = validate_invoice(row)
         if invoice:
             output_lines.extend(generate_lines_for_invoice(invoice))
@@ -73,7 +142,7 @@ def process_payments(
 
             if config.use_gsheets and ws_invoices:
                 ws_invoices.update_cell(
-                    i + 2,
+                    index + 2,
                     invoices.columns.get_loc(COL_PAID) + 1,
                     True
                 )
@@ -116,10 +185,13 @@ def main():
 
         # Write file
         file_name = f"utlägg_{datetime.datetime.now().strftime('%Y%m%d')}_po3.txt"
-        write_po3_file(file_name, output_lines)
+        file_path = write_po3_file(file_name, output_lines)
 
-        print(f"✓ {number_of_rows} payments written to: {file_name}")
+        print(f"✓ {number_of_rows} payments written to: {file_path}")
         print(f"✓ Total amount: {total_cost:.2f} SEK")
+
+        # Upload attachments to Spiris if enabled
+        upload_attachments_to_spiris(expenses, invoices)
 
     except Exception as e:
         print(f"Error: {e}")

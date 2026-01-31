@@ -34,28 +34,6 @@ class ExpenseRow(BaseModel):
         """Parse boolean fields from various formats."""
         return _parse_boolean(v)
 
-    @field_validator("Belopp", mode="before")
-    @classmethod
-    def parse_amount(cls, v):
-        """Parse amount field as float."""
-        if isinstance(v, (int, float)):
-            return float(v)
-        return float(str(v).replace(",", "."))
-
-    @field_validator("Clearingnummer", "Kontonummer", mode="before")
-    @classmethod
-    def parse_integers(cls, v):
-        """Parse integer fields."""
-        if isinstance(v, int):
-            return v
-        return int(str(v).replace(",", "").strip())
-
-    @field_validator("Verksamhet", "Ditt_namn", "Kort_beskrivning_av_köp", mode="before")
-    @classmethod
-    def strip_strings(cls, v):
-        """Strip whitespace from string fields."""
-        return str(v).strip()
-
 
 class InvoiceRow(BaseModel):
     """Model for invoice data rows from CSV."""
@@ -86,17 +64,3 @@ class InvoiceRow(BaseModel):
         if isinstance(v, (int, float)):
             return float(v)
         return float(str(v).replace(",", "."))
-
-    @field_validator("Mottagarkontonummer", mode="before")
-    @classmethod
-    def parse_integer(cls, v):
-        """Parse integer field."""
-        if isinstance(v, int):
-            return v
-        return int(str(v).replace(",", "").strip())
-
-    @field_validator("Verksamhet", "Mottagarkontotyp", "OCR_meddelande", "Ditt_namn", "Kort_beskrivning_av_köp", "Mottagare_namn", mode="before")
-    @classmethod
-    def strip_strings(cls, v):
-        """Strip whitespace from string fields."""
-        return str(v).strip()

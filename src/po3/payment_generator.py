@@ -1,10 +1,10 @@
 """Payment line generation for expenses and invoices."""
 
-from constants import (
+from .constants import (
     BANKGIRO_CODE,
     PLUSGIRO_CODE,
 )
-from formatters import (
+from .formatters import (
     create_message,
     create_note,
     generate_ba00,
@@ -12,7 +12,7 @@ from formatters import (
     generate_pi00_expense,
     generate_pi00_giro,
 )
-from models import ExpenseRow, InvoiceRow
+from .models import ExpenseRow, InvoiceRow
 
 
 def generate_lines_for_expense(expense: ExpenseRow) -> list[str]:

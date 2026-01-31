@@ -129,21 +129,45 @@ def main():
     total_cost = 0
 
     output_lines = []
-    output_lines.append(generate_start_line())
-    expenses = pd.read_csv(os.getenv("EXPENSE_PATH"))
-    for _, row in expenses[~expenses["Utbetalt"]].iterrows():
+    if os.getenv("USE_GSHEETS") == "TRUE":
+        import gspread
+
+        gc = gspread.oauth()
+        sheet = gc.open(os.getenv("SHEET_NAME"))
+        ws_expenses = sheet.get_worksheet_by_id(int(os.getenv("EXPENSE_GSHEET_ID")))
+        expenses_data = ws_expenses.get_all_records()
+        expenses = pd.DataFrame(expenses_data)
+        ws_invoices = sheet.get_worksheet_by_id(int(os.getenv("INVOICE_GSHEET_ID")))
+        invoices_data = ws_invoices.get_all_records()
+        invoices = pd.DataFrame(invoices_data)
+        print("Data loaded from Google Sheets.")
+    else:
+        expenses = pd.read_csv(os.getenv("EXPENSE_PATH"))
+        invoices = pd.read_csv(os.getenv("INVOICE_PATH"))
+        print("Data loaded from CSV files.")
+
+    invoices["Godkänt"] = invoices["Godkänt"].map(lambda x: str(x).strip().lower() == "true" if isinstance(x, str) else bool(x))
+    invoices["Utbetalt"] = invoices["Utbetalt"].map(lambda x: str(x).strip().lower() == "true" if isinstance(x, str) else bool(x))
+    expenses["Godkänt"] = expenses["Godkänt"].map(lambda x: str(x).strip().lower() == "true" if isinstance(x, str) else bool(x))
+    expenses["Utbetalt"] = expenses["Utbetalt"].map(lambda x: str(x).strip().lower() == "true" if isinstance(x, str) else bool(x))
+
+    for i, row in expenses[~expenses["Utbetalt"]].iterrows():
         payment = generate_lines_for_one_expense(row)
         if payment:
             output_lines.extend(payment)
             total_cost += row["Belopp"]
             number_of_rows += 1
-    invoices = pd.read_csv(os.getenv("INVOICE_PATH"))
-    for _, row in invoices[~invoices["Utbetalt"]].iterrows():
+            if os.getenv("USE_GSHEETS") == "TRUE":
+                ws_expenses.update_cell(i + 2, expenses.columns.get_loc("Utbetalt") + 1, True)
+
+    for i, row in invoices[~invoices["Utbetalt"]].iterrows():
         payment = generate_lines_for_one_invoice(row)
         if payment:
             output_lines.extend(payment)
             total_cost += row["Belopp"]
             number_of_rows += 1
+            if os.getenv("USE_GSHEETS") == "TRUE":
+                ws_invoices.update_cell(i + 2, invoices.columns.get_loc("Utbetalt") + 1, True)
     output_lines.append(generate_end_line(number_of_rows, total_cost))
     file_name = "utlägg_" + datetime.datetime.now().strftime("%Y%m%d") + "_po3.txt"
     if number_of_rows == 0:

@@ -41,6 +41,12 @@ This project has been refactored into separate modules for better maintainabilit
   - `generate_lines_for_expense()` - Generate full payment entry for expense
   - `generate_lines_for_invoice()` - Generate full payment entry for invoice
 
+### File Management
+- **`file_downloader.py`** - Download invoice and receipt files from Google Drive
+  - `extract_file_id_from_url()` - Extract Google Drive file ID from various URL formats
+  - `download_file_from_drive()` - Download a single file from Google Drive
+  - `download_processed_files()` - Download all files from processed expenses and invoices
+
 ## Usage
 
 ### Running the Script
@@ -77,6 +83,9 @@ for _, row in expenses.iterrows():
 - `pydantic` - Data validation
 - `python-dotenv` - Environment variable management
 - `gspread` - Google Sheets API (optional, only if using `USE_GSHEETS=TRUE`)
+- `google-api-python-client` - Google Drive API for downloading files
+- `google-auth-httplib2` - Google authentication
+- `google-auth-oauthlib` - Google OAuth for authentication
 
 ## Environment Variables
 
@@ -92,6 +101,21 @@ For Google Sheets mode (set `USE_GSHEETS=TRUE`):
 - `SHEET_NAME` - Name of Google Sheet
 - `EXPENSE_GSHEET_ID` - Worksheet ID for expenses
 - `INVOICE_GSHEET_ID` - Worksheet ID for invoices
+
+## Features
+
+### Automatic File Download
+When using Google Sheets mode, the system automatically downloads invoice and receipt files:
+- Expense receipts from the "Ladda upp bild på kvitto" column
+- Invoices from the "Ladda upp fakturan" column
+
+Downloaded files are saved to:
+- `downloaded_documents/receipts/` - Expense receipts
+- `downloaded_documents/invoices/` - Invoice files
+
+Files are named with format: `expense_{index}_{name}` or `invoice_{index}_{name}`
+
+**Note:** This feature requires Google Drive API access and proper OAuth credentials.
 
 ## Design Benefits
 

@@ -1,5 +1,6 @@
 """Pydantic models for expense and invoice data."""
 
+from datetime import date, datetime
 from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
@@ -50,6 +51,7 @@ class InvoiceRow(BaseModel):
     Ditt_namn: str = Field(alias="Ditt namn")
     Kort_beskrivning_av_köp: str = Field(alias="Kort beskrivning av köp")
     Mottagare_namn: str = Field(alias="Mottagare (namn)")
+    Payment_date: date = Field(alias="Sista betalningsdatum")
 
     @field_validator("Godkänt", "Utbetalt", mode="before")
     @classmethod
@@ -64,3 +66,21 @@ class InvoiceRow(BaseModel):
         if isinstance(v, (int, float)):
             return float(v)
         return float(str(v).replace(",", "."))
+
+    @field_validator("OCR_meddelande", mode="before")
+    @classmethod
+    def make_str(cls, v):
+        """Convert OCR_meddelande to string."""
+        return str(v)
+
+    @field_validator("Payment_date", mode="before")
+    @classmethod
+    def parse_payment_date(cls, v):
+        """Parse payment date from string."""
+        if isinstance(v, datetime):
+            return v.date()
+        if isinstance(v, date):
+            return v
+        if isinstance(v, str):
+            return date.fromisoformat(v.strip())
+        raise ValueError(f"Invalid payment date value: {v!r}")

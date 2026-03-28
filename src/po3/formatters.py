@@ -121,7 +121,8 @@ def generate_pi00_giro(
     account_number: int,
     amount: float,
     ocr: str,
-    giro_code: str
+    giro_code: str,
+    payment_date: datetime.date
 ) -> str:
     """
     Generate PI00 payment line for giro payment (Plusgiro/Bankgiro).
@@ -141,7 +142,7 @@ def generate_pi00_giro(
         + " " * 5
         + str(account_number).ljust(11)
         + "  "
-        + datetime.datetime.now().strftime("%Y%m%d")
+        + max(datetime.date.today(), payment_date).strftime("%Y%m%d")
         + format_amount(amount)
         + str(ocr).ljust(25)
         + " " * 10

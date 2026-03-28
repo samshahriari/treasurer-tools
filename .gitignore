@@ -15,7 +15,6 @@ utlägg_*.txt
 .env
 google_client_secret.json
 .google_drive_token.json
-.spiris_tokens.json
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

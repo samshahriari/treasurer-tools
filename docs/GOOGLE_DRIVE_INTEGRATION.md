@@ -1,80 +1,39 @@
-# Google Drive Integration Complete ✓
+# Google Drive Integration
+
+This project includes a Google Drive client for downloading files referenced by Google Drive URLs.
+
 ## Setup Instructions
 
 ### 1. Create OAuth Credentials in Google Cloud Console
 1. Go to [Google Cloud Console](https://console.cloud.google.com/)
-2. Create new project or select existing
+2. Create a project or select an existing one
 3. Enable Google Drive API
-4. Go to Credentials → Create OAuth 2.0 Client ID
-   - Choose "Desktop application"
-   - Download the credentials
-   - Save as `google_client_secret.json` in project root
+4. Go to Credentials and create an OAuth 2.0 Client ID
+5. Choose "Desktop application"
+6. Download credentials and save them as `google_client_secret.json` in the project root
 
 ### 2. Run OAuth Setup
+
 ```bash
-python setup_google_oauth.py
+python scripts/setup_google_oauth.py
 ```
 
-This will:
-- Open browser for you to log in with your Google account
-- Ask for permission to access Google Drive (read-only)
-- Save token to `.google_drive_token.json` for future use
+This opens a browser, asks for Drive read-only permission, and stores your token in `.google_drive_token.json`.
 
-### 3. Configure environment
-Add to `.env`:
-```
-UPLOAD_TO_SPIRIS=TRUE
-```
+## Usage Example
 
-That's it! The OAuth token is automatically cached and refreshed.
-
-## Workflow
-```
-CSV/Sheets → PO3 Generation → Mark as paid
-         ↓
-  Google Drive Download (OAuth)
-  (if UPLOAD_TO_SPIRIS=TRUE)
-         ↓
-  Spiris Upload
-  (base64 encoded binary)
-```
-
-## Testing
-```bash
-python test_google_drive_integration.py
-```
-
-This verifies:
-- ✓ GoogleDriveClient initialization
-- ✓ SpirisClient initialization  
-- ✓ File ID extraction from URLs
-- ✓ All required packages installed
-
-## Full Workflow Example
 ```python
-from google_drive import GoogleDriveClient
-from spiris import SpirisClient
+from src.integrations.google_drive import GoogleDriveClient
 
-# Download from Google Drive (uses cached OAuth token)
 drive = GoogleDriveClient()
-content, filename = drive.download_file_from_url("https://drive.google.com/file/d/...")
-
-# Upload to Spiris
-spiris = SpirisClient()
-result = spiris.upload_attachment_binary(
-    file_content=content,
-    file_name=filename,
-    description="Receipt for expense",
-    document_type="Receipt"
-)
+content, filename = drive.download_file_from_url("https://drive.google.com/file/d/<FILE_ID>/view")
+print(filename, len(content))
 ```
 
-## Key Features
-- ✅ OAuth authentication (user's own Google account)
-- ✅ Automatic token caching and refresh
-- ✅ Supports multiple Google Drive URL formats
-- ✅ Binary file uploads to Spiris (base64 encoded JSON)
-- ✅ Graceful error handling and user feedback
-- ✅ Client caching to avoid repeated initialization
-- ✅ Optional feature - disabled by default
+## What It Supports
+
+- OAuth token caching and refresh
+- Download by file ID
+- Download directly from common Drive URL formats
+- Clear errors for invalid URLs or missing auth setup
 

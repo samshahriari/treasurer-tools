@@ -42,57 +42,6 @@ def write_po3_file(file_name: str, lines: list[str]) -> None:
     return file_path
 
 
-def upload_attachments_to_spiris(expenses: pd.DataFrame, invoices: pd.DataFrame) -> None:
-    """
-    Upload attachments to Spiris if enabled.
-
-    Args:
-        expenses: DataFrame with expenses
-        invoices: DataFrame with invoices
-    """
-    if not os.getenv("UPLOAD_TO_SPIRIS", "FALSE").upper() == "TRUE":
-        return
-
-    try:
-        from src.integrations import (
-            SpirisClient,
-            get_google_drive_client,
-            upload_expense_attachments,
-            upload_invoice_attachments,
-        )
-
-        print("\nUploading attachments to Spiris...")
-        spiris_client = SpirisClient()
-        drive_client = get_google_drive_client()
-
-        # Upload expense attachments
-        for _, row in expenses[~expenses[COL_PAID]].iterrows():
-            expense = validate_expense(row)
-            if expense and hasattr(expense, "Ladda upp bild på kvitto"):
-                upload_expense_attachments(
-                    expense,
-                    spiris_client=spiris_client,
-                    drive_client=drive_client
-                )
-
-        # Upload invoice attachments
-        for _, row in invoices[~invoices[COL_PAID]].iterrows():
-            invoice = validate_invoice(row)
-            if invoice and hasattr(invoice, "Ladda upp fakturan"):
-                upload_invoice_attachments(
-                    invoice,
-                    spiris_client=spiris_client,
-                    drive_client=drive_client
-                )
-
-        print("✓ Attachment upload complete")
-
-    except ImportError:
-        print("Warning: Spiris modules not available. Skipping attachment uploads.")
-    except Exception as e:
-        print(f"Warning: Failed to upload attachments to Spiris - {e}")
-
-
 def process_payments(
     expenses: pd.DataFrame,
     invoices: pd.DataFrame,
@@ -189,9 +138,6 @@ def main():
 
         print(f"✓ {number_of_rows} payments written to: {file_path}")
         print(f"✓ Total amount: {total_cost:.2f} SEK")
-
-        # Upload attachments to Spiris if enabled
-        upload_attachments_to_spiris(expenses, invoices)
 
     except Exception as e:
         print(f"Error: {e}")

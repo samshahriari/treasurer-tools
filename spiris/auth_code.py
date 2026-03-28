@@ -22,6 +22,7 @@ params = {
     "redirect_uri": REDIRECT_URI,
     "response_type": "code",
     "scope": "ea:api offline_access ea:accounting ea:sales",
+    "prompt": "login select_account"
 }
 
 url = AUTH_URL + "?" + urllib.parse.urlencode(params)
@@ -37,7 +38,7 @@ auth_code = input("Authorization code: ").strip()
 if auth_code:
     print(f"\nYour authorization code: {auth_code}")
     print("\nTo use this code, run:")
-    print("  from spiris import SpirisClient")
+    print("  from src.integrations.spiris import SpirisClient")
     print(f'  client = SpirisClient(auth_code="{auth_code}")')
     print("\nOr set it in the auth function and it will be cached for future use.")
 else:

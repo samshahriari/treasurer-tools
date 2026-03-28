@@ -1,5 +1,6 @@
 """Integration of Spiris attachments with PO3 payment processing."""
 
+import datetime
 from typing import Optional
 
 import pandas as pd
@@ -64,7 +65,7 @@ def upload_expense_attachments(
         # Download from Google Drive
         file_content, file_name = drive_client.download_file_from_url(url)
 
-        description = f"{expense.Verksamhet} - {expense.Kort_beskrivning_av_köp}"
+        description = f" {datetime.datetime.now()} {expense.Verksamhet} - {expense.Kort_beskrivning_av_köp}"
         result = spiris_client.upload_attachment_binary(
             file_content=file_content,
             file_name=file_name,

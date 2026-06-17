@@ -60,7 +60,6 @@ def generate_lines_for_invoice(invoice: InvoiceRow) -> list[str]:
         invoice.Belopp,
         invoice.OCR_meddelande,
         giro_code,
-        invoice.Payment_date
     ))
 
     note = create_note(invoice.Verksamhet, invoice.Kort_beskrivning_av_köp, invoice.Ditt_namn)

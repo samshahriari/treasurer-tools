@@ -17,7 +17,7 @@ def load_data_from_gsheets(config: Config) -> tuple[pd.DataFrame, pd.DataFrame, 
     """
     import gspread
 
-    gc = gspread.oauth()
+    gc = gspread.oauth(credentials_filename="./google_client_secret.json", authorized_user_filename="./.google_drive_token.json")
     sheet = gc.open(config.sheet_name)
 
     ws_expenses = sheet.get_worksheet_by_id(int(config.expense_gsheet_id))

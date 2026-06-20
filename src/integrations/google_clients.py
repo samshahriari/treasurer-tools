@@ -105,7 +105,7 @@ class EmailAttachment:
 class GmailClient(GoogleAuthClient):
     """Client for sending Gmail messages with optional attachments."""
 
-    SCOPES = ["https://mail.google.com"]
+    SCOPES = ["https://mail.google.com/"]
     TOKEN_FILE = "gmail_token.json"
     service_name = "gmail"
     service_version = "v1"

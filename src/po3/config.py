@@ -13,6 +13,10 @@ class Config:
         self.org_number = self._get_required("ORG_NUMBER")
         self.account_number = self._get_required("ACCOUNT_NUMBER")
         self.use_gsheets = os.getenv("USE_GSHEETS", "FALSE").upper() == "TRUE"
+        self.attachment_email_recipient = os.getenv(
+            "ATTACHMENT_EMAIL_RECIPIENT",
+            "contact@example.com",
+        )
 
         if self.use_gsheets:
             self.sheet_name = self._get_required("SHEET_NAME")

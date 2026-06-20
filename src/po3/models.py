@@ -26,6 +26,7 @@ class ExpenseRow(BaseModel):
     Verksamhet: str
     Clearingnummer: int
     Kontonummer: int
+    kvitto_url: str | None = Field(default=None, alias="Ladda upp bild på kvitto")
     Ditt_namn: str = Field(alias="Ditt namn")
     Kort_beskrivning_av_köp: str = Field(alias="Kort beskrivning av köp")
 
@@ -34,6 +35,15 @@ class ExpenseRow(BaseModel):
     def parse_booleans(cls, v):
         """Parse boolean fields from various formats."""
         return _parse_boolean(v)
+
+    @field_validator("kvitto_url", mode="before")
+    @classmethod
+    def normalize_kvitto_url(cls, v):
+        """Treat blank attachment cells as missing values."""
+        if v is None:
+            return None
+        value = str(v).strip()
+        return value or None
 
 
 class InvoiceRow(BaseModel):
@@ -45,6 +55,7 @@ class InvoiceRow(BaseModel):
     Utbetalt: bool
     Belopp: float
     Verksamhet: str
+    faktura_url: str | None = Field(default=None, alias="Ladda upp fakturan")
     Mottagarkontotyp: Literal["Plusgiro", "Bankgiro"]
     Mottagarkontonummer: int
     OCR_meddelande: str = Field(alias="OCR/meddelande")
@@ -72,6 +83,15 @@ class InvoiceRow(BaseModel):
     def make_str(cls, v):
         """Convert OCR_meddelande to string."""
         return str(v)
+
+    @field_validator("faktura_url", mode="before")
+    @classmethod
+    def normalize_faktura_url(cls, v):
+        """Treat blank attachment cells as missing values."""
+        if v is None:
+            return None
+        value = str(v).strip()
+        return value or None
 
     @field_validator("Payment_date", mode="before")
     @classmethod

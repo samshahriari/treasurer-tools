@@ -8,6 +8,7 @@ Automated tool for generating Swedish PO3 (Plusgiro/Bankgiro) payment files from
 - Load data from CSV files or Google Sheets
 - Validate rows with Pydantic models before output generation
 - Mark processed rows as paid in Google Sheets mode
+- Download files from Google Drive and attach them to Gmail messages
 
 ## Quick Start
 
@@ -53,6 +54,40 @@ This will:
 2. Generate a PO3 payment file in `output/`
 3. Print payment count and total amount
 
+## Gmail attachments
+
+When PO3 runs, it will automatically forward Drive files found in:
+
+- expenses: `Ladda upp bild på kvitto`
+- invoices: `Ladda upp fakturan`
+
+The files are emailed to `ATTACHMENT_EMAIL_RECIPIENT`.
+
+Use the Drive and Gmail integration clients together if you need the same behavior in your own code:
+
+```python
+from src.integrations import GmailClient, GoogleDriveClient
+
+drive = GoogleDriveClient()
+gmail = GmailClient()
+
+content, filename = drive.download_file_from_url("https://drive.google.com/file/d/<FILE_ID>/view")
+attachment = GmailClient.from_bytes(content, filename)
+
+gmail.send_message(
+    to="recipient@example.com",
+    subject="Attached file",
+    body="See attached.",
+    attachments=[attachment],
+)
+```
+
+To authenticate Gmail sending, run:
+
+```bash
+python scripts/setup_gmail_oauth.py
+```
+
 ## Project Structure
 
 ```
@@ -73,20 +108,11 @@ utlägg/
 │   │   └── payment_generator.py
 │   └── integrations/
 │       ├── __init__.py
-│       └── google_drive.py
-├── scripts/
-│   └── setup_google_oauth.py
-├── docs/
-│   ├── MODULE_STRUCTURE.md
-│   └── GOOGLE_DRIVE_INTEGRATION.md
+│       ├── google_clients.py
 ├── data/
 └── output/
 ```
 
-## Documentation
-
-- Google Drive setup: [docs/GOOGLE_DRIVE_INTEGRATION.md](docs/GOOGLE_DRIVE_INTEGRATION.md)
-- Module overview: [docs/MODULE_STRUCTURE.md](docs/MODULE_STRUCTURE.md)
 
 ## Troubleshooting
 

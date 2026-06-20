@@ -10,6 +10,7 @@ if sys.platform == "win32":
 
 import pandas as pd
 
+from src.integrations import EmailAttachment, GmailClient, GoogleDriveClient
 from src.po3 import (
     COL_PAID,
     Config,
@@ -42,12 +43,40 @@ def write_po3_file(file_name: str, lines: list[str]) -> None:
     return file_path
 
 
+def _send_drive_attachment(
+    gmail_client: GmailClient,
+    drive_client: GoogleDriveClient,
+    recipient: str,
+    subject: str,
+    body: str,
+    drive_url: str,
+) -> dict:
+    """Download a Drive file and send it as a Gmail attachment."""
+    content, filename = drive_client.download_file_from_url(drive_url)
+    attachment = EmailAttachment(filename=filename, content=content)
+    return gmail_client.send_message(
+        to=recipient,
+        subject=subject,
+        body=body,
+        attachments=[attachment],
+    )
+
+
+def _has_attachment_urls(frame: pd.DataFrame, column_name: str) -> bool:
+    """Return True when a dataframe contains at least one Drive URL."""
+    if column_name not in frame.columns:
+        return False
+    return frame[column_name].fillna("").astype(str).str.strip().ne("").any()
+
+
 def process_payments(
     expenses: pd.DataFrame,
     invoices: pd.DataFrame,
     config: Config,
     ws_expenses=None,
-    ws_invoices=None
+    ws_invoices=None,
+    gmail_client: GmailClient | None = None,
+    drive_client: GoogleDriveClient | None = None,
 ) -> tuple[list[str], int, float]:
     """
     Process all unpaid expenses and invoices.
@@ -74,6 +103,19 @@ def process_payments(
             total_cost += expense.Belopp
             number_of_rows += 1
 
+            if gmail_client and drive_client and expense.kvitto_url:
+                _send_drive_attachment(
+                    gmail_client,
+                    drive_client,
+                    config.attachment_email_recipient,
+                    f"PO3 kvitto: {expense.Ditt_namn}",
+                    (
+                        f"Automatisk vidarebefordran av kvitto för {expense.Ditt_namn} "
+                        f"({expense.Verksamhet})"
+                    ),
+                    expense.kvitto_url,
+                )
+
             if config.use_gsheets and ws_expenses:
                 ws_expenses.update_cell(
                     index + 2,
@@ -88,6 +130,19 @@ def process_payments(
             output_lines.extend(generate_lines_for_invoice(invoice))
             total_cost += invoice.Belopp
             number_of_rows += 1
+
+            if gmail_client and drive_client and invoice.faktura_url:
+                _send_drive_attachment(
+                    gmail_client,
+                    drive_client,
+                    config.attachment_email_recipient,
+                    f"PO3 faktura: {invoice.Mottagare_namn}",
+                    (
+                        f"Automatisk vidarebefordran av faktura för {invoice.Mottagare_namn} "
+                        f"({invoice.Verksamhet})"
+                    ),
+                    invoice.faktura_url,
+                )
 
             if config.use_gsheets and ws_invoices:
                 ws_invoices.update_cell(
@@ -118,9 +173,21 @@ def main():
         expenses[COL_PAID] = parse_bool_col(expenses[COL_PAID])
         invoices[COL_PAID] = parse_bool_col(invoices[COL_PAID])
 
+        gmail_client = GmailClient() if (
+            _has_attachment_urls(expenses, "Ladda upp bild på kvitto")
+            or _has_attachment_urls(invoices, "Ladda upp fakturan")
+        ) else None
+        drive_client = GoogleDriveClient() if gmail_client else None
+
         # Process payments
         output_lines, number_of_rows, total_cost = process_payments(
-            expenses, invoices, config, ws_expenses, ws_invoices
+            expenses,
+            invoices,
+            config,
+            ws_expenses,
+            ws_invoices,
+            gmail_client,
+            drive_client,
         )
 
         # Check if there are any payments

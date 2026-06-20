@@ -131,6 +131,7 @@ from generated.skattepl_ovriga_formaner_ulag_ag import (
 from generated.skattepl_ovriga_formaner_ulag_ea import (
     SkatteplOvrigaFormanerUlagEa,
 )
+from generated.skatteverket import Skatteverket
 from generated.slf_vinstandel_fk486 import SlfVinstandelFk486
 from generated.specifikationsnummer import Specifikationsnummer
 from generated.summa_arb_avg_slf import SummaArbAvgSlf
@@ -267,6 +268,7 @@ __all__ = [
     "SkatteplOvrigaFormanerEjUlagSa",
     "SkatteplOvrigaFormanerUlagAg",
     "SkatteplOvrigaFormanerUlagEa",
+    "Skatteverket",
     "SlfVinstandelFk486",
     "Specifikationsnummer",
     "SummaArbAvgSlf",

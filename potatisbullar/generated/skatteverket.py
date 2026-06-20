@@ -1,6 +1,12 @@
 from dataclasses import dataclass, field
 from typing import Optional
 
+from generated.avsandare import Avsandare
+from generated.blankettgemensamt import Blankettgemensamt
+from generated.blankett import Blankett
+from generated.franvarouppgift import Franvarouppgift
+from generated.omrade import Omrade
+
 __NAMESPACE__ = (
     "http://xmls.skatteverket.se/se/skatteverket/da/instans/schema/1.1"
 )
@@ -17,7 +23,7 @@ class Skatteverket:
             "http://xmls.skatteverket.se/se/skatteverket/da/instans/schema/1.1"
         )
 
-    avsandare: Optional[str] = field(
+    avsandare: Optional[Avsandare] = field(
         default=None,
         metadata={
             "name": "Avsandare",
@@ -26,7 +32,7 @@ class Skatteverket:
             "required": True,
         },
     )
-    blankettgemensamt: Optional[str] = field(
+    blankettgemensamt: Optional[Blankettgemensamt] = field(
         default=None,
         metadata={
             "name": "Blankettgemensamt",
@@ -35,7 +41,7 @@ class Skatteverket:
             "required": True,
         },
     )
-    blankett: list[str] = field(
+    blankett: list[Blankett] = field(
         default_factory=list,
         metadata={
             "name": "Blankett",
@@ -44,7 +50,7 @@ class Skatteverket:
             "min_occurs": 1,
         },
     )
-    franvarouppgift: list[str] = field(
+    franvarouppgift: list[Franvarouppgift] = field(
         default_factory=list,
         metadata={
             "name": "Franvarouppgift",
@@ -54,7 +60,7 @@ class Skatteverket:
             "sequence": 1,
         },
     )
-    omrade: Optional[str] = field(
+    omrade: Optional[Omrade] = field(
         default=None,
         metadata={
             "type": "Attribute",

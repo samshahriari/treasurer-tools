@@ -10,7 +10,7 @@ class Employee(BaseModel):
     model_config = ConfigDict(extra="ignore", populate_by_name=True)
 
     namn: str = Field(alias="Namn")
-    epost: str = Field(alias="epost")
+    epost: str = Field(alias="Epost")
     personnummer: str = Field(alias="Personnummer")
     clearingnummer: str = Field(alias="Clearingnummer")
     kontonummer: str = Field(alias="Kontonummer")

@@ -1,7 +1,8 @@
 """AGI XML generation logic matching the official Skatteverket e-filing format."""
 
-from datetime import datetime
 import xml.etree.ElementTree as ET
+from datetime import datetime
+
 from .config import AGIConfig
 from .models import Employee
 
@@ -105,7 +106,7 @@ def generate_agi_xml(employees: list[Employee], config: AGIConfig) -> str:
         faltkod="006",
     )
     agd_el_text(
-        "i",
+        "SummaArbAvgSlf",
         hu,
         str(total_employer_contrib),
         faltkod="487",

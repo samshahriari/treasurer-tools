@@ -2,6 +2,9 @@
 
 import xml.etree.ElementTree as ET
 from datetime import datetime
+from typing import assert_never
+
+from agi.domain import Verksamhet
 
 from .config import AGIConfig
 from .models import Employee
@@ -147,7 +150,19 @@ def generate_agi_xml(employees: list[Employee], config: AGIConfig) -> str:
         )
 
         # Specifikationsnummer formatted as zero-padded 3-digit string (e.g. 001)
-        spec_num = f"{idx:03d}"  # TODO: depend on verksamhets
+        match emp.verksamhet:
+            case Verksamhet.KOLLO:
+                spec_num = "001"
+            case Verksamhet.ZAFARI:
+                spec_num = "002"
+            case Verksamhet.CAFE:
+                spec_num = "001"
+            case Verksamhet.ZAFARISSON:
+                spec_num = "001"
+            case Verksamhet.MIDSOMMAR:
+                spec_num = "001"
+            case _:
+                assert_never(emp.verksamhet)
         agd_el_text("Specifikationsnummer", iu, spec_num, faltkod="570")
 
         # Gross cash salary (FK011)

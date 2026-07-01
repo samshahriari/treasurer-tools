@@ -104,17 +104,20 @@ def process_payments(
             number_of_rows += 1
 
             if gmail_client and drive_client and expense.kvitto_url:
-                _send_drive_attachment(
-                    gmail_client,
-                    drive_client,
-                    config.attachment_email_recipient,
-                    f"PO3 kvitto: {expense.Ditt_namn}",
-                    (
-                        f"Automatisk vidarebefordran av kvitto för {expense.Ditt_namn} "
-                        f"({expense.Verksamhet})"
-                    ),
-                    expense.kvitto_url,
-                )
+                for attachment_url in expense.kvitto_url.split(","):
+                    attachment_url = attachment_url.strip()
+                    if attachment_url:
+                        _send_drive_attachment(
+                            gmail_client,
+                            drive_client,
+                            config.attachment_email_recipient,
+                            f"PO3 kvitto: {expense.Ditt_namn}",
+                            (
+                                f"Automatisk vidarebefordran av kvitto för {expense.Ditt_namn} "
+                                f"({expense.Verksamhet})"
+                            ),
+                            attachment_url,
+                        )
 
             if config.use_gsheets and ws_expenses:
                 ws_expenses.update_cell(

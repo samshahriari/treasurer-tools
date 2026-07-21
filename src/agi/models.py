@@ -1,6 +1,8 @@
 """Pydantic models for Skatteverket AGI XML generation."""
 
 import re
+
+import pandas as pd
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
@@ -9,18 +11,12 @@ class Employee(BaseModel):
 
     model_config = ConfigDict(extra="ignore", populate_by_name=True)
 
-    namn: str = Field(alias="Namn")
-    epost: str = Field(alias="Epost")
+    name: str = Field(alias="Namn")
+    email: str = Field(alias="Epost")
     personnummer: str = Field(alias="Personnummer")
-    clearingnummer: str = Field(alias="Clearingnummer")
-    kontonummer: str = Field(alias="Kontonummer")
-    antal_timmar: float = Field(alias="Antal timmar")
-    timlon: float = Field(alias="Timlön")
-    skatteprocent: float = Field(alias="Skatteprocent")
-    total_lon: float = Field(alias="Total lön")
-    lon_utbetald: float = Field(alias="Lön som ska betalas ut")
-    skatt: float = Field(alias="Skatt")
-    verksamhet: str = Field(alias="Verksamhet")
+    clearing_number: str = Field(alias="Clearingnummer")
+    account_number: str = Field(alias="Kontonummer")
+    salary_rows: list["SalaryRow"] = Field(alias="Löneuppgifter")
 
     @field_validator("personnummer", mode="before")
     @classmethod
@@ -39,7 +35,7 @@ class Employee(BaseModel):
             )
         return cleaned
 
-    @field_validator("clearingnummer", "kontonummer", mode="before")
+    @field_validator("clearing_number", "account_number", mode="before")
     @classmethod
     def convert_to_str(cls, v) -> str:
         """Convert account and clearing numbers to clean strings."""
@@ -55,12 +51,16 @@ class Employee(BaseModel):
         """Extract birth year from 12-digit personnummer."""
         return int(self.personnummer[:4])
 
+    @property
+    def total_salary(self) -> float:
+        """Calculate the total salary for this employee."""
+        return sum(row.total_salary for row in self.salary_rows)
+
     def calculate_employer_contribution(self, year: int = 2026) -> int:
         """
         Calculate the employer contribution for this employee in SEK.
 
         Swedish standard rates for 2026 (including temporary youth nedsättning):
-        - Born 1957 or earlier (age 68 or older in 2026): 10.21% (retirement pension contribution only)
         - Born 2003 to 2007 (age 19–23 in 2026):
           - 20.81% on compensation up to 25,000 SEK per calendar month
           - 31.42% on compensation exceeding 25,000 SEK
@@ -68,15 +68,63 @@ class Employee(BaseModel):
         """
         birth_year = self.birth_year
 
+        if year != 2026:
+            raise ValueError(
+                f"Employer contribution calculation is only implemented for the year 2026, not {year}."
+            )
+
         if year == 2026 and 2003 <= birth_year <= 2007:
             # Youth reduction (born 2003-2007): 20.81% up to 25k, 31.42% above
-            if self.total_lon <= 25000:
-                contribution = self.total_lon * 0.2081
+
+            if self.total_salary <= 25000:
+                contribution = self.total_salary * 0.2081
             else:
-                contribution = (25000 * 0.2081) + ((self.total_lon - 25000) * 0.3142)
+                contribution = (25000 * 0.2081) + ((self.total_salary - 25000) * 0.3142)
         else:
             # Standard rate: 31.42%
-            contribution = self.total_lon * 0.3142
+            contribution = self.total_salary * 0.3142
 
         # Round to nearest integer SEK as expected by Skatteverket
         return int(round(contribution))
+
+
+class SalaryRow(BaseModel):
+    number_of_hours: float = Field(alias="Antal timmar")
+    hourly_wage: float = Field(alias="Timlön")
+    tax_percentage: float = Field(alias="Skatteprocent")
+    total_salary: float = Field(alias="Total lön")
+    salary_to_be_paid: float = Field(alias="Lön som ska betalas ut")
+    tax: float = Field(alias="Skatt")
+    verksamhet: str = Field(alias="Verksamhet")
+
+
+def load_employees_from_csv(csv_path: str) -> list[Employee]:
+    """Load and validate employees from the salary CSV file."""
+    # Read the CSV with pandas
+    df = pd.read_csv(csv_path)
+
+    employee_info_cols = [
+        "Namn",
+        "Epost",
+        "Personnummer",
+        "Clearingnummer",
+        "Kontonummer",
+    ]
+    salary_cols = [
+        "Antal timmar",
+        "Timlön",
+        "Skatteprocent",
+        "Total lön",
+        "Lön som ska betalas ut",
+        "Skatt",
+        "Verksamhet",
+    ]
+
+    grouped = (
+        df.groupby(employee_info_cols)[salary_cols]
+        .apply(lambda g: g.to_dict(orient="records"))
+        .reset_index(name="Löneuppgifter")
+    )
+
+    # 3. Convert records directly into Pydantic models
+    return [Employee.model_validate(record) for record in grouped.to_dict("records")]

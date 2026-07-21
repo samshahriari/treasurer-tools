@@ -4,10 +4,9 @@ import xml.etree.ElementTree as ET
 from datetime import datetime
 from typing import assert_never
 
-from agi.domain import Verksamhet
-
 from .config import AGIConfig
-from .models import Employee
+from ...domain import Verksamhet
+from ..models import Employee
 
 NS_DEFAULT = "http://xmls.skatteverket.se/se/skatteverket/da/instans/schema/1.1"
 NS_AGD = "http://xmls.skatteverket.se/se/skatteverket/da/komponent/schema/1.1"

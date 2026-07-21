@@ -56,6 +56,16 @@ class Employee(BaseModel):
         """Calculate the total salary for this employee."""
         return sum(row.total_salary for row in self.salary_rows)
 
+    @property
+    def deducted_tax(self) -> float:
+        """Calculate the total tax deducted for this employee."""
+        return sum(row.tax for row in self.salary_rows)
+
+    @property
+    def payed_salary(self) -> float:
+        """Calculate the total salary to be paid for this employee."""
+        return sum(row.salary_to_be_paid for row in self.salary_rows)
+
     def calculate_employer_contribution(self, year: int = 2026) -> int:
         """
         Calculate the employer contribution for this employee in SEK.
@@ -96,6 +106,11 @@ class SalaryRow(BaseModel):
     salary_to_be_paid: float = Field(alias="Lön som ska betalas ut")
     tax: float = Field(alias="Skatt")
     verksamhet: str = Field(alias="Verksamhet")
+
+    @field_validator("number_of_hours", "hourly_wage", "tax_percentage", "total_salary", "salary_to_be_paid", "tax", mode="before")
+    @classmethod
+    def replace_comma(cls, v) -> str:
+        return str(v).replace(",", ".")
 
 
 def load_employees_from_csv(csv_path: str) -> list[Employee]:

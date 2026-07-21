@@ -199,3 +199,116 @@ class GmailClient(GoogleAuthClient):
             .send(userId="me", body={"raw": encoded_message})
             .execute()
         )
+
+    @staticmethod
+    def generate_html_table(data: list[list[str]], has_header: bool = True) -> str:
+        """
+        Converts a list of lists of strings into a styled HTML table
+        compatible with Gmail API email bodies.
+        """
+        if not data:
+            return ""
+
+        # Container styling
+        table_style = (
+            'width: 100%; '
+            'max-width: 600px; '
+            'border-collapse: collapse; '
+            'font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; '
+            'font-size: 14px; '
+            'color: #1e293b; '
+            'margin: 16px 0;'
+        )
+
+        header_style = (
+            'background-color: #0f172a; '
+            'color: #ffffff; '
+            'font-weight: 600; '
+            'text-align: left; '
+            'padding: 10px 14px; '
+            'border: 1px solid #cbd5e1;'
+        )
+
+        cell_base_style = (
+            'padding: 10px 14px; '
+            'border: 1px solid #cbd5e1; '
+            'text-align: left;'
+        )
+
+        rows_html = []
+
+        # Process header if present
+        start_idx = 0
+        if has_header:
+            header_cells = "".join(f'<th style="{header_style}">{cell}</th>' for cell in data[0])
+            rows_html.append(f'  <thead>\n    <tr>{header_cells}</tr>\n  </thead>')
+            start_idx = 1
+
+        # Process body rows
+        body_rows = []
+        for row_idx, row in enumerate(data[start_idx:]):
+            # Alternating background colors (#ffffff / #f8fafc)
+            bg_color = '#ffffff' if row_idx % 2 == 0 else '#f8fafc'
+            cell_style = f'{cell_base_style} background-color: {bg_color};'
+
+            cells = "".join(f'<td style="{cell_style}">{cell}</td>' for cell in row)
+            body_rows.append(f'    <tr>{cells}</tr>')
+
+        rows_html.append('  <tbody>\n' + "\n".join(body_rows) + '\n  </tbody>')
+
+        return f'<table style="{table_style}">\n' + "\n".join(rows_html) + '\n</table>'
+
+    def _build_html_message(
+        self,
+        to: str,
+        subject: str,
+        html_body: str,
+        attachments: Sequence[EmailAttachment] = (),
+        sender: Optional[str] = None,
+        cc: Optional[Sequence[str]] = None,
+        bcc: Optional[Sequence[str]] = None,
+    ) -> EmailMessage:
+        message = EmailMessage()
+        message["To"] = to
+        message["Subject"] = subject
+
+        if sender:
+            message["From"] = sender
+        if cc:
+            message["Cc"] = ", ".join(cc)
+        if bcc:
+            message["Bcc"] = ", ".join(bcc)
+
+        # Direct HTML setting with plain-text fallback
+        message.set_content("Vänligen aktivera HTML-visning för att se detta mejl.")
+        message.add_alternative(html_body, subtype="html")
+
+        for attachment in attachments:
+            message.add_attachment(
+                attachment.data,
+                maintype=attachment.maintype,
+                subtype=attachment.subtype,
+                filename=attachment.filename,
+            )
+
+        return message
+
+    def send_html_message(
+        self,
+        to: str,
+        subject: str,
+        html_body: str,
+        attachments: Sequence[EmailAttachment] = (),
+        sender: Optional[str] = None,
+        cc: Optional[Sequence[str]] = None,
+        bcc: Optional[Sequence[str]] = None,
+    ) -> dict:
+        """Send an HTML email message through Gmail."""
+        message = self._build_html_message(to, subject, html_body, attachments, sender, cc, bcc)
+        encoded_message = base64.urlsafe_b64encode(message.as_bytes()).decode()
+        return (
+            self.service.users()
+            .messages()
+            .send(userId="me", body={"raw": encoded_message})
+            .execute()
+        )

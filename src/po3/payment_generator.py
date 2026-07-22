@@ -1,5 +1,8 @@
 """Payment line generation for expenses and invoices."""
 
+import datetime
+
+from ..salary.models import Employee
 from .constants import (
     BANKGIRO_CODE,
     PLUSGIRO_CODE,
@@ -66,4 +69,20 @@ def generate_lines_for_invoice(invoice: InvoiceRow) -> list[str]:
     lines.append(generate_ba00(note))
     lines.append(generate_be01(invoice.Mottagare_namn))
 
+    return lines
+
+
+def generate_lines_for_salary(employee: Employee) -> list[str]:
+    lines = []
+
+    lines.append(generate_pi00_expense(
+        employee.clearing_number,
+        employee.account_number,
+        employee.payed_salary,
+        "Lön",
+        datetime.date(2026, 7, 24)
+    ))
+
+    lines.append(generate_ba00(f"Lön {employee.name}"))
+    lines.append(generate_be01(employee.name))
     return lines

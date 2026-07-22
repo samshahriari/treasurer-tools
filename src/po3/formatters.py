@@ -90,7 +90,8 @@ def generate_pi00_expense(
     clearing_number: int,
     account_number: int,
     amount: float,
-    message: str
+    message: str,
+    payment_date: datetime.date = datetime.date.today(),
 ) -> str:
     """
     Generate PI00 payment line for bank account expense.
@@ -110,7 +111,7 @@ def generate_pi00_expense(
         + str(clearing_number).ljust(5)
         + str(account_number).ljust(11)
         + "  "
-        + datetime.datetime.now().strftime("%Y%m%d")
+        + payment_date.strftime("%Y%m%d")
         + format_amount(amount)
         + message.ljust(12)[:12]
         + " " * 23

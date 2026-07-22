@@ -16,6 +16,7 @@ class Employee(BaseModel):
     personnummer: str = Field(alias="Personnummer")
     clearing_number: str = Field(alias="Clearingnummer")
     account_number: str = Field(alias="Kontonummer")
+    tax_percentage: int = Field(alias="Skatteprocent")
     salary_rows: list["SalaryRow"] = Field(alias="Löneuppgifter")
 
     @field_validator("personnummer", mode="before")
@@ -52,17 +53,17 @@ class Employee(BaseModel):
         return int(self.personnummer[:4])
 
     @property
-    def total_salary(self) -> float:
+    def total_salary(self) -> int:
         """Calculate the total salary for this employee."""
         return sum(row.total_salary for row in self.salary_rows)
 
     @property
-    def deducted_tax(self) -> float:
+    def deducted_tax(self) -> int:
         """Calculate the total tax deducted for this employee."""
         return sum(row.tax for row in self.salary_rows)
 
     @property
-    def payed_salary(self) -> float:
+    def payed_salary(self) -> int:
         """Calculate the total salary to be paid for this employee."""
         return sum(row.salary_to_be_paid for row in self.salary_rows)
 
@@ -101,13 +102,12 @@ class Employee(BaseModel):
 class SalaryRow(BaseModel):
     number_of_hours: float = Field(alias="Antal timmar")
     hourly_wage: float = Field(alias="Timlön")
-    tax_percentage: float = Field(alias="Skatteprocent")
-    total_salary: float = Field(alias="Total lön")
-    salary_to_be_paid: float = Field(alias="Lön som ska betalas ut")
-    tax: float = Field(alias="Skatt")
+    total_salary: int = Field(alias="Total lön")
+    salary_to_be_paid: int = Field(alias="Lön som ska betalas ut")
+    tax: int = Field(alias="Skatt")
     verksamhet: str = Field(alias="Verksamhet")
 
-    @field_validator("number_of_hours", "hourly_wage", "tax_percentage", "total_salary", "salary_to_be_paid", "tax", mode="before")
+    @field_validator("number_of_hours", "hourly_wage", "total_salary", "salary_to_be_paid", "tax", mode="before")
     @classmethod
     def replace_comma(cls, v) -> str:
         return str(v).replace(",", ".")
@@ -124,11 +124,11 @@ def load_employees_from_csv(csv_path: str) -> list[Employee]:
         "Personnummer",
         "Clearingnummer",
         "Kontonummer",
+        "Skatteprocent",
     ]
     salary_cols = [
         "Antal timmar",
         "Timlön",
-        "Skatteprocent",
         "Total lön",
         "Lön som ska betalas ut",
         "Skatt",

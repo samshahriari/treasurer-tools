@@ -1,22 +1,26 @@
+import locale
 import os
 
 from ...integrations.google_clients import GmailClient
 from ..models import Employee
 
+locale.setlocale(locale.LC_ALL, "sv_SE.UTF-8")
+
 
 def generate_salary_specification_table(employee: Employee) -> list[list[str]]:
-    rows = [["Verksamhet", "Timlön", "Antal timmar", "Total lön"]]
+    rows = [["Verksamhet", "Timlön (kr/h)", "Antal timmar (h)", "Semesterersättning 12 % (kr)", "Belopp (kr)"]]
     for row in employee.salary_rows:
         rows.append([
             str(row.verksamhet),
-            str(row.hourly_wage),
-            str(row.number_of_hours),
-            str(row.total_salary)
+            str(f'{row.hourly_wage:n}'),
+            str(f'{row.number_of_hours:n}'),
+            str(f'{round(row.hourly_wage*row.number_of_hours*0.12):n}'),
+            str(f'{row.total_salary:n}')
         ])
     return rows
 
 
-def generate_salary_specification(employee: Employee, year: int, month: str) -> str:
+def generate_salary_specification(employee: Employee, year: int, month: str, payout_date: str) -> str:
     # Organization header block
     org_name = os.getenv('ORG_NAME', '')
     org_number = os.getenv('ORG_NUMBER', '')
@@ -40,16 +44,17 @@ def generate_salary_specification(employee: Employee, year: int, month: str) -> 
     <h2 style="color: #0f172a; margin-bottom: 16px;">
       Lönespecifikation för {employee.name} ({employee.personnummer}) – {month} {year}
     </h2>
+    <i> Utbetalningsdag: {payout_date} </i>
 
     <!-- Table -->
     {table_html}
 
     <!-- Summary Box -->
     <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 16px; margin: 20px 0; max-width: 600px;">
-      <p style="margin: 4px 0;"><strong>Total lön:</strong> {employee.total_salary} kr</p>
-      <p style="margin: 4px 0; color: #dc2626;"><strong>Avdragen skatt:</strong> {employee.deducted_tax} kr</p>
+      <p style="margin: 4px 0;"><strong>Bruttolön:</strong> {f'{employee.total_salary:n}'} kr</p>
+      <p style="margin: 4px 0; color: #dc2626;"><strong>Avdragen skatt ({employee.tax_percentage} %):</strong> {f'{employee.deducted_tax:n}'} kr</p>
       <hr style="border: 0; border-top: 1px solid #cbd5e1; margin: 10px 0;">
-      <p style="margin: 4px 0; font-size: 16px;"><strong>Betalas ut:</strong> {net_payout} kr till {employee.clearing_number} {employee.account_number}</p>
+      <p style="margin: 4px 0; font-size: 20px;"><strong>NETTOLÖN:</strong> {f'{net_payout:n}'} kr </p>
     </div>
 
     <!-- Footer -->
